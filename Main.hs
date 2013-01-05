@@ -1,5 +1,7 @@
+import Data.List (nub, sortBy)
 import Data.Map (Map)
-import Data.Sequence
+import Data.Ord (comparing)
+import Data.Sequence (index, update, fromList, Seq)
 import qualified Data.Map as Map
 import System.Environment (getArgs)
 
@@ -14,14 +16,14 @@ graph wds =
     addWord :: CharMap -> String -> CharMap
     addWord (CharMap m) "" = CharMap $ Map.insert '$' EndofWord m
     addWord (CharMap m) (x:xs) = case Map.lookup x m of
-                         Just m' -> addWord m' xs
+                         Just m' -> CharMap $ Map.insert x (addWord m' xs) m
                          Nothing -> CharMap $ Map.insert x (addWord (CharMap Map.empty) xs) m
 
 lookup :: Char -> CharMap -> Maybe CharMap
 lookup c (CharMap m) = Map.lookup c m
 
 findWords :: CharMap -> String -> String
-findWords g i = show $ map (fromStart (fromList i) g  "") [0 .. 15]
+findWords g i = unlines $ sortBy (comparing length) $ map reverse $ nub $ concat $ map (fromStart (fromList i) g  "") [0 .. 15]
 
 fromStart :: Seq Char -> CharMap -> String -> Int -> [String]
 fromStart board g sofar i =
@@ -40,13 +42,9 @@ main = do
   case args of
     [dictPath] -> do
         cnts <- readFile dictPath
-        let wds = lines cnts
-        let g = graph wds
-        putStrLn $ show wds
-        putStrLn $ show $ g
         putStrLn $ "enter the letters:"
         input <- getLine
-        putStrLn $ findWords g input
+        putStrLn $ findWords (graph $ lines cnts) input
     _          -> putStrLn "error: exactly one argument expected"
 
 
